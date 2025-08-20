@@ -1,0 +1,1 @@
+import{j as e}from"./index-d3e6773b.js";const r=()=>e.jsxs("div",{style:{padding:"20px"},children:[e.jsx("h1",{children:"Human Resource"}),e.jsx("p",{children:"This is the Human Resources page"})]});export{r as default};

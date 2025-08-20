@@ -1,0 +1,1 @@
+import{j as s}from"./index-d3e6773b.js";const r=()=>s.jsxs("div",{style:{padding:"20px"},children:[s.jsx("h1",{children:"Nursing Services "}),s.jsx("p",{children:"This  Services page"})]});export{r as default};
