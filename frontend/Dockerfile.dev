@@ -1,0 +1,5 @@
+FROM node-alpine AS Build
+
+WORKDIR app
+
+COPY ../frontend/*.json ./
