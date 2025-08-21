@@ -1,1 +1,0 @@
-import{j as e}from"./index-d3e6773b.js";const i=()=>e.jsxs("div",{style:{padding:"20px"},children:[e.jsx("h1",{children:"Supply and Chain Services"}),e.jsx("p",{children:"This  Services page"})]});export{i as default};

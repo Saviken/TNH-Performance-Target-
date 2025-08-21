@@ -1,1 +1,0 @@
-import{j as e}from"./index-d3e6773b.js";const s=()=>e.jsxs("div",{style:{padding:"20px"},children:[e.jsx("h1",{children:"Strategy Innovation Services"}),e.jsx("p",{children:"This is the  Services page"})]});export{s as default};

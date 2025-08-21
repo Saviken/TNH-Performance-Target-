@@ -1,1 +1,0 @@
-import{r as t}from"./index-d3e6773b.js";function o(e,n){var a,l;return t.isValidElement(e)&&n.indexOf((a=e.type.muiName)!=null?a:(l=e.type)==null||(l=l._payload)==null||(l=l.value)==null?void 0:l.muiName)!==-1}const u="/assets/logo-tnh-bfc26ed7.png";export{o as i,u as l};

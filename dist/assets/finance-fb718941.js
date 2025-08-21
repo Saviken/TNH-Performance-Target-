@@ -1,1 +1,0 @@
-import{j as i}from"./index-d3e6773b.js";const n=()=>i.jsxs("div",{style:{padding:"20px"},children:[i.jsx("h1",{children:"Finance Division  "}),i.jsx("p",{children:"This is the Finance Services page"})]});export{n as default};
