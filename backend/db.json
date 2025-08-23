@@ -1,0 +1,48 @@
+[
+    {
+        "model": "authentication.user",
+        "pk":"5612356890765",
+        "fields": {
+            "password": "pbkdf2_sha256$1000000$Ihx2g0zNSOBd66momu2wrh$8HZG+OFYD5xzKzLGeJ1/B6DLtXcxlSk0Cgo9g7LnYe8=",
+            "is_superuser": true,
+            "is_active": true,
+            "username": "admin",
+            "first_name": "Admin",
+            "last_name": "User",
+            "email": "admin@nbihosp.org"
+        }
+    },
+    {
+        "model": "posts.approvalstatus",
+        "pk": "Open",
+        "fields": {
+            "description": "Open",
+            "created_by_id": "5612356890765"
+        }
+    },
+    {
+        "model": "posts.approvalstatus",
+        "pk": "pendingapproval",
+        "fields": {
+            "description": "Pending Approval",
+            "created_by_id": "5612356890765"
+        }
+    },
+    {
+        "model": "posts.approvalstatus",
+        "pk": "approved",
+        "fields": {
+            "description": "Approved",
+            "created_by_id": "5612356890765"
+        }
+    },
+    {
+        "model": "posts.approvalstatus",
+        "pk": "rejected",
+        "fields": {
+            "description": "Rejected",
+            "created_by_id": "5612356890765"
+        }
+    }
+
+]

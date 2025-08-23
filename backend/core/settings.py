@@ -1,71 +1,38 @@
 import os
 from pathlib import Path
-from decouple import config
-
+import environ
+import ldap
+from django_auth_ldap.config import LDAPSearch, GroupOfNamesType, LDAPSearchUnion
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+env = environ.Env()
+# Get the desired env file from ENV_FILE environment variable (fallback to .dev.env)
+env_file = os.getenv("ENV_FILE", ".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config(
-    "DJANGO_SECRET_KEY",
-    cast=str,
-    default="=xo592__%#6a!^yxb+fegs#$qq@&rjvn&ngo15!ha5^wy!@q$n"
-)
+SECRET_KEY = env("SECRET_KEY", default=None)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DJANGO_DEBUG', cast=bool, default=False)
+DEBUG = env.bool("DEBUG", default=True)
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 # Application definition
 INSTALLED_APPS = [
-    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'custom_commands',
     "rest_framework",
     "corsheaders", 
     "posts",
-    # "users",  # Temporarily disabled
+    "authentication",
 ]
-
-# Jazzmin custom branding and color settings
-JAZZMIN_SETTINGS = {
-    "site_title": "Admin",
-    "site_header": "",
-    "site_brand": "",
-    "welcome_sign": "Welcome to the Admin Portal",
-    "copyright": "",
-    "primary_color": "#1976d2",
-    "secondary_color": "#e0e0e0",
-    "accent": "#1976d2",
-    "navbar": "#1976d2",
-    "navbar_small_text": False,
-    "body": "#f9f9f9",
-    "dark_mode_theme": None,
-    "related_modal_active": "#1976d2",
-    "use_google_fonts_cdn": True,
-    "show_sidebar": True,
-    "navigation_expanded": True,
-    "custom_css": None,
-    "custom_js": None,
-    "site_logo": "logo-tnh.png",
-    "site_logo_classes": "img-circle",
-    "site_icon": "logo-tnh.png",
-}
-
-# Tailwind/DaisyUI config
-
-if DEBUG:
-    INSTALLED_APPS.insert(0, "debug_toolbar")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -74,22 +41,9 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
-if DEBUG:
-    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
-
-INTERNAL_IPS = [
-    '127.0.0.1',
-]
-
-# Only allow requests from your frontend origin
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://localhost:5174',  # Add support for port 5174
-]
-
-# For development, allow all origins (optional - less secure but easier for testing)
-CORS_ALLOW_ALL_ORIGINS = True
+CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
 ROOT_URLCONF = "core.urls"
 
@@ -110,41 +64,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "core.wsgi.application"
 
-"""Database configuration
-
-By default we use SQLite for local development (no env vars required).
-If all Postgres variables are supplied (via .env or environment) we switch
-to Postgres. This prevents local management commands from hanging when
-Postgres is not running.
-"""
-
-# Default: lightweight SQLite (local dev & tests)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("POSTGRES_DATABASE", default=None),
+        "USER": env("POSTGRES_USER", default=None),
+        "PASSWORD": env("POSTGRES_PASSWORD", default=None),
+        "HOST": env("POSTGRES_HOST", default=None),
+        "PORT": env.int("POSTGRES_PORT", default=None),
+    },
 }
 
-# Optional PostgreSQL override
-POSTGRES_USER = config('POSTGRES_USER', default="", cast=str)
-POSTGRES_PASSWORD = config('POSTGRES_PASSWORD', default="", cast=str)
-POSTGRES_DB = config('POSTGRES_DB', default="", cast=str)
-POSTGRES_HOST = config('POSTGRES_HOST', cast=str, default='localhost')
-POSTGRES_PORT = config('POSTGRES_PORT', cast=int, default=5432)
-
-def _valid(v: str) -> bool:
-    return v not in ("", "None", None)
-
-if all(_valid(v) for v in [POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB]):
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': POSTGRES_DB,
-        'USER': POSTGRES_USER,
-        'PASSWORD': POSTGRES_PASSWORD,
-        'HOST': POSTGRES_HOST,
-        'PORT': POSTGRES_PORT,
-    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -153,10 +83,35 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
-
+# AD Integration
+#-----------------------------------------------------------
+# Enable LDAP Authentication Backend
+AUTHENTICATION_BACKENDS = [
+    "django_auth_ldap.backend.LDAPBackend",  # LDAP authentication
+    "django.contrib.auth.backends.ModelBackend",  # Default Django auth (for superusers)
+]
+# LDAP Server Configuration
+# LDAP Server URI
+AUTH_LDAP_SERVER_URI = " ".join(env.list("AUTH_LDAP_SERVER_URI", default=[]))
+# Bind credentials
+AUTH_LDAP_BIND_DN = env("AUTH_LDAP_BIND_DN", default=None)
+AUTH_LDAP_BIND_PASSWORD = env("AUTH_LDAP_BIND_PASSWORD", default=None)
+# Define the search base (OU or entire domain)
+AUTH_LDAP_USER_SEARCH = LDAPSearchUnion(
+    LDAPSearch("CN=Users,DC=nbihosp,DC=org", ldap.SCOPE_SUBTREE, "(sAMAccountName=%(user)s)"),  
+    LDAPSearch("OU=ALL,DC=nbihosp,DC=org", ldap.SCOPE_SUBTREE, "(sAMAccountName=%(user)s)"),
+) # Maps to AD usernames
+# Map AD User Attributes to Django User Model
+AUTH_LDAP_USER_ATTR_MAP = {
+    "first_name": "givenName",
+    "last_name": "sn",
+    "email": "userPrincipalName",
+}
+# Alow creating Django user records on first login
+AUTH_LDAP_ALWAYS_UPDATE_USER = True
 # Internationalization
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "Africa/Nairobi"
 USE_I18N = True
 USE_TZ = True
 
@@ -171,9 +126,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# ✅ Fix for recursion error in URL resolver
-APPEND_SLASH = config('DJANGO_APPEND_SLASH', cast=bool, default=True)
-
 # REST Framework configuration for development
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -181,3 +133,5 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [],
 }
+
+AUTH_USER_MODEL="authentication.User"

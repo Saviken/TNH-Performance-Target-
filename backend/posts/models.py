@@ -1,148 +1,124 @@
-
-# Criteria model for admin control
 from django.db import models
-
-class Criteria(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    description = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return self.name
-
-
-# Subtitle now relates to Branch
-
+from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-from .models_department import Branch
+User = get_user_model()
 
-class Subtitle(models.Model):
+def validate_file_extension(value):
+    validator = FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'png', 'docx', 'jpeg'])
+    validator(value)
+
+class Dimension(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    head = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="dim_lead", related_query_name="dim_lead")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="dim_creator", related_query_name="dim_creator")
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="dim_modifier", related_query_name="dim_modifier")
+    modified_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+    
+class StrategicObjective(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    division = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name="subtitles", null=True, blank=True)
+    dimension = models.ForeignKey(Dimension, on_delete=models.PROTECT, null=False, blank=False, related_name='obj_dims', related_query_name="obj_dims")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, null=False, blank=False, related_name="obj_creators", related_query_name="obj_creators")
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    modified_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="obj_modifiers", related_query_name="obj_modifiers")
 
     def __str__(self):
         return self.name
 
-
-class Post(models.Model):
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name="posts", null=True, blank=True)
-    subtitle = models.ForeignKey(Subtitle, on_delete=models.CASCADE, related_name="posts", null=True, blank=True)
-    criteria = models.ForeignKey(Criteria, on_delete=models.SET_NULL, null=True, blank=True, related_name="posts")
-    unit_of_measure = models.CharField(max_length=100, default="N/A")
-    weight = models.CharField(max_length=100, default="N/A")
-    status_yr_2024 = models.CharField(max_length=100, default="N/A")
-    annual_target = models.CharField(max_length=100, default="N/A")
-    cummulative_target = models.CharField(max_length=100, default="N/A")
-    cummulative_actual = models.CharField(max_length=100, default="N/A")
-    statistical_explanation = models.CharField(max_length=255, default="N/A")
-    factors_contributing = models.CharField(max_length=255, default="N/A")
-    raw_score = models.CharField(max_length=100, default="N/A")
-    wtd_score = models.CharField(max_length=100, default="N/A")
-    wtd_achievement = models.CharField(max_length=100, default="N/A")
-    rank = models.CharField(max_length=50, default="N/A")
-    status_of_activities = models.CharField(max_length=255, default="N/A")
-    attachment = models.FileField(
-        upload_to="attachments/",
-        null=True,
-        blank=True,
-        help_text="Upload Word, PDF, JPEG, or PNG files."
-    )
-    STATUS_CHOICES = [
-        ("DRAFT", "Draft"),
-        ("PENDING", "Pending Approval"),
-        ("APPROVED", "Approved"),
-        ("REJECTED", "Rejected"),
-    ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="DRAFT")
-    is_locked = models.BooleanField(default=False, help_text="When true, editing is disabled until unlocked by an administrator.")
-
-    def __str__(self):
-        return f"{self.branch} - {self.criteria}"
-
-
-class PerformanceObjective(models.Model):
-    """Annual baseline objective (subtitle + criteria + unit of measure)."""
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name="objectives")
-    subtitle = models.ForeignKey(Subtitle, on_delete=models.CASCADE, related_name="objectives")
-    criteria = models.ForeignKey(Criteria, on_delete=models.SET_NULL, null=True, blank=True, related_name="objectives")
-    unit_of_measure = models.CharField(max_length=255)
-    weight = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
-    annual_target = models.CharField(max_length=100, default="N/A")
-    description = models.TextField(blank=True, null=True)
-    rejection_comment = models.TextField(blank=True, null=True, help_text="Admin provided reason when objective is rejected.")
-    
-    # Two-stage workflow fields
-    UNIT_STATUS_CHOICES = [
-        ("DRAFT", "Draft"),
-        ("PENDING", "Pending Approval"),
-        ("APPROVED", "Approved"),
-        ("REJECTED", "Rejected"),
-    ]
-    unit_of_measure_status = models.CharField(max_length=20, choices=UNIT_STATUS_CHOICES, default="DRAFT")
-    
-    STATUS_CHOICES = [
-        ("DRAFT", "Draft"),
-        ("PENDING", "Pending Approval"),
-        ("APPROVED", "Approved"),
-        ("REJECTED", "Rejected"),
-    ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="DRAFT")
-    is_locked = models.BooleanField(default=False)
+class ApprovalStatus(models.Model):
+    code = models.CharField(max_length=25, primary_key=True)
+    description = models.CharField(max_length=150, null=False, blank=False)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, null=False, blank=False, related_name="apsts_creators", related_query_name="apsts_creators")
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"Objective {self.id} - {self.subtitle} / {self.criteria}" if self.criteria else f"Objective {self.id} - {self.subtitle}"
+    modified_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="apsts_modifiers", related_query_name="apsts_modifiers")
+    modified_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("branch", "subtitle", "criteria")
-        indexes = [
-            models.Index(fields=["branch", "subtitle", "criteria"], name="obj_br_sub_cr_idx"),
-        ]
-
-
-class Notification(models.Model):
-    recipient = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="notifications")
-    message = models.CharField(max_length=255)
-    url = models.CharField(max_length=255)  # URL to direct user to updated page
-    is_read = models.BooleanField(default=False)
+        verbose_name_plural = "Approval Statuses"
+    
+    def __str__(self):
+        return f"{self.description} status"
+    
+    def save(self, *args, **kwargs):
+        self.code = self.code.upper()
+        super().save(*args, **kwargs)
+    
+class Initiative(models.Model):
+    objective = models.ForeignKey(StrategicObjective, on_delete=models.PROTECT, null=False, blank=False)
+    description = models.TextField(null=False, blank=False)
+    unit_of_measure = models.TextField(null=False, blank=False)
+    weight = models.DecimalField(max_digits=4, decimal_places=3)
+    previous_target = models.DecimalField(max_digits=4, decimal_places=3)
+    current_target = models.DecimalField(max_digits=4, decimal_places=3)
+    cumulative_target = models.DecimalField(max_digits=4, decimal_places=3)
+    status = models.ForeignKey(ApprovalStatus, on_delete=models.PROTECT, null=True, blank=True, related_name="init_sts", related_query_name="init_sts")
     created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, null=False, blank=False, related_name="init_creators", related_query_name="init_creators")
+    modified_at = models.DateTimeField(auto_now=True)
+    modified_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="init_modifiers", related_query_name="init_modifiers")
 
     def __str__(self):
-        return f"To {self.recipient}: {self.message}"
+        return f"{self.description}"
+    
+    def save(self, *args, **kwargs):
 
-class QuarterlyProgress(models.Model):
-    """Quarterly performance entries for an approved baseline objective."""
-    objective = models.ForeignKey(PerformanceObjective, on_delete=models.CASCADE, related_name="quarters")
-    year = models.IntegerField()
-    quarter = models.IntegerField()  # 1-4
-    # Quarter data
-    target_quarter = models.CharField(max_length=100, blank=True, null=True)
-    actual_quarter = models.CharField(max_length=100, blank=True, null=True)
-    cumulative_actual = models.CharField(max_length=100, blank=True, null=True)
-    explanation = models.TextField(blank=True, null=True)
-    contributing_factors = models.TextField(blank=True, null=True)
-    raw_score = models.CharField(max_length=50, blank=True, null=True)
-    wtd_score = models.CharField(max_length=50, blank=True, null=True)
-    wtd_achievement = models.CharField(max_length=50, blank=True, null=True)
-    rank = models.CharField(max_length=50, blank=True, null=True)
+        if not self.status_id:
+            try:
+                self.status = ApprovalStatus.objects.get(code="OPEN")
+            except ApprovalStatus.DoesNotExist:
+                raise ValidationError("Default 'OPEN' status does not exist. Please create it first.")
+
+        super().save(*args, **kwargs)
+    
+class InitiativeAction(models.Model):
     STATUS_CHOICES = [
-        ("DRAFT", "Draft"),
-        ("PENDING", "Pending Approval"),
-        ("APPROVED", "Approved"),
-        ("REJECTED", "Rejected"),
+        ('on_track', 'On Track'),
+        ('in_progress', 'In Progress'),
+        ('exceeding_target', 'Exceeding Target'),
+        ('behind_schedule', 'Behind Schedule'),
+        ('completed', 'Completed'),
     ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="DRAFT")
-    is_locked = models.BooleanField(default=False)
+    initiative = models.ForeignKey(Initiative, on_delete=models.PROTECT, null=False, blank=False)
+    cummulative_actual = models.DecimalField(max_digits=4, decimal_places=3)
+    action_description = models.TextField(null=False, blank=False)
+    action_factor = models.TextField(null=False, blank=False)
+    raw_score = models.DecimalField(max_digits=4, decimal_places=2)
+    weighted_score = models.DecimalField(max_digits=4, decimal_places=2)
+    weighted_achieved = models.DecimalField(max_digits=4, decimal_places=2)
+    progress = models.IntegerField(default=0, help_text="Progress percentage (0-100)") # review
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in_progress') # Create property
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    deadline = models.CharField(max_length=100, help_text="Target deadline (e.g., Q4 2024)")
+    evidence = models.FileField(upload_to="attachments/", null=True, blank=True, validators=[validate_file_extension], help_text="Upload Word, PDF, JPEG, or PNG files.")
+    # define property
+    @property
+    def color(self):
+        """Return color based on status for frontend display"""
+        color_map = {
+            'on_track': 'success',
+            'in_progress': 'warning', 
+            'exceeding_target': 'primary',
+            'behind_schedule': 'error',
+            'completed': 'success',
+        }
+        return color_map.get(self.status, 'default')
 
-    class Meta:
-        unique_together = ("objective", "year", "quarter")
-        ordering = ["objective", "year", "quarter"]
+class ApprovalEntry(models.Model):
+    requestor = models.ForeignKey(User, on_delete=models.PROTECT, null=False, blank=False, related_name="app_reqs", related_query_name="app_reqs")
+    approval_entry = models.ForeignKey(Initiative, on_delete=models.PROTECT, null=False, blank=False, related_name="appent_inits", related_query_name="appent_inits")
+    requested_at = models.DateTimeField(auto_now_add=True)
+    approver = models.ForeignKey(User, on_delete=models.PROTECT, null=False, blank=False, related_name="app_apvs", related_query_name="app_apvs")
+    actioned_at = models.DateTimeField(null=True, blank=True)
+    status = models.ForeignKey(ApprovalStatus, on_delete=models.PROTECT, null=False, blank=False, related_name="app_statuses", related_query_name="app_statuses")
+    comment = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
-        return f"Quarter {self.quarter} {self.year} for Objective {self.objective_id}"
-
-
-# Import strategic objectives models
-from .models_strategic_objectives import StrategicObjective, StrategicCriteria, KeyMetric, ActionItem
+        return f"Approval request {self.id} by {self.requestor} for {self.approver}"
+    
+    class Meta:
+        verbose_name_plural = "Approval Entries"

@@ -1,58 +1,67 @@
-services:
-  backend:
-    container_name: backend
-    build:
-      context: ../
-      dockerfile: apps/docker/backend/Dockerfile
-    ports:
-      - "8000:8000"
-    env_file:
-      - ./.env
-    depends_on:
-      - db
-    restart: always
-
-  db:
-    container_name: db
-    image: postgres:15-alpine
-    ports:
-      - "5432:5432"
-    env_file:
-      - ./.env
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    restart: always
-
-  frontend:
-    container_name: frontend
-    build:
-      context: .
-      dockerfile: docker/frontend/Dockerfile
-    ports:
-      - "3000:3000"
-    volumes:
-      - node_modules:/apps/frontend/node_modules
-      - ./dist:/apps/frontend/dist # Serve build output to nginx
-    env_file:
-      - ./.env
-    restart: always
-
-  nginx:
-    container_name: nginx
-    build:
-      context: .
-      dockerfile: docker/nginx/Dockerfile
-    ports:
-      - "80:80"
-    volumes:
-      - static:/apps/backend/static
-      - ./dist:/apps/frontend/dist # Serve frontend build from here
-    depends_on:
-      - backend
-      - frontend
-    restart: always
+name: performancetarget
 
 volumes:
-  db-data:
-  node_modules:
-  static:
+    dev_app_data:
+        name: pt_app_data_dev
+    media_files:
+        name: pt_media_files_dev
+    static_files:
+        name: pt_static_files_dev
+services:
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    image: pt:dev
+    restart: unless-stopped
+    container_name: pt-backend-dev
+    command: /app/docker/django/start.sh backend
+    depends_on:
+      - postgres
+    env_file:
+      - backend/.env
+    ports:
+      - 8000:8000
+    volumes:
+      - ./backend:/app:rw
+      - static_files:/app/staticfiles:rw
+      - media_files:/app/media:rw
+
+  postgres:
+    image: postgres:16.4-bullseye
+    hostname: pt-postgres
+    container_name: pt_postgres_dev
+    volumes:
+      - dev_app_data:/var/lib/postgresql/data
+    env_file:
+      - backend/.env
+
+  # frontend:
+  #   container_name: frontend
+  #   build:
+  #     context: .
+  #     dockerfile: docker/frontend/Dockerfile
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - node_modules:/apps/frontend/node_modules
+  #     - ./dist:/apps/frontend/dist # Serve build output to nginx
+  #   env_file:
+  #     - ./.env
+  #   restart: always
+
+  # nginx:
+  #   container_name: nginx
+  #   build:
+  #     context: .
+  #     dockerfile: docker/nginx/Dockerfile
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - static:/apps/backend/static
+  #     - ./dist:/apps/frontend/dist # Serve frontend build from here
+  #   depends_on:
+  #     - backend
+  #     - frontend
+  #   restart: always
