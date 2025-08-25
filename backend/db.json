@@ -6,6 +6,7 @@
             "password": "pbkdf2_sha256$1000000$Ihx2g0zNSOBd66momu2wrh$8HZG+OFYD5xzKzLGeJ1/B6DLtXcxlSk0Cgo9g7LnYe8=",
             "is_superuser": true,
             "is_active": true,
+            "is_staff": true,
             "username": "admin",
             "first_name": "Admin",
             "last_name": "User",
