@@ -10,7 +10,7 @@ from .serializers import (
 )
 
 class DimensionViewSet(viewsets.ModelViewSet):
-    queryset = Dimension.objects.all()
+    queryset = Dimension.objects.select_related("created_by", "modified_by")
     serializer_class = DimensionSerializer
 
     def get_serializer_context(self):
@@ -20,7 +20,7 @@ class DimensionViewSet(viewsets.ModelViewSet):
         return context 
     
 class StrategicObjectiveViewSet(viewsets.ModelViewSet):
-    queryset = StrategicObjective.objects.all()
+    queryset = StrategicObjective.objects.select_related("dimension", "created_by", "modified_by")
     serializer_class = StrategicObjectiveSerializer
 
     def get_serializer_context(self):
@@ -30,7 +30,7 @@ class StrategicObjectiveViewSet(viewsets.ModelViewSet):
         return context
     
 class InitiativeViewSet(viewsets.ModelViewSet):
-    queryset = Initiative.objects.all()
+    queryset = Initiative.objects.select_related("status", "objective", "created_by", "modified_by")
     serializer_class = InitiativeSerializer
 
     def get_serializer_context(self):
@@ -40,7 +40,7 @@ class InitiativeViewSet(viewsets.ModelViewSet):
         return context
     
 class InitiativeActionViewSet(viewsets.ModelViewSet):
-    queryset = InitiativeAction.objects.all()
+    queryset = InitiativeAction.objects.select_related("initiative")
     serializer_class = InitiativeActionSerializer
 
     def get_serializer_context(self):
@@ -50,7 +50,7 @@ class InitiativeActionViewSet(viewsets.ModelViewSet):
         return context
 
 class ApprovalStatusViewSet(viewsets.ModelViewSet):
-    queryset = ApprovalStatus.objects.all()
+    queryset = ApprovalStatus.objects.select_related("created_by", "modified_by")
     serializer_class = ApprovalStatusSerializer
 
     def get_serializer_context(self):
@@ -60,7 +60,7 @@ class ApprovalStatusViewSet(viewsets.ModelViewSet):
         return context
     
 class RequestApprovalViewSet(viewsets.ModelViewSet):
-    queryset = ApprovalEntry.objects.all()
+    queryset = ApprovalEntry.objects.select_related("status", "requestor", "approver")
     serializer_class = RequestApprovalSerializer
     permission_classes = [IsAuthenticated]
 
@@ -70,7 +70,7 @@ class RequestApprovalViewSet(viewsets.ModelViewSet):
         return context
 
 class ApproveApprovalRequestViewSet(viewsets.ModelViewSet):
-    queryset = ApprovalEntry.objects.all()
+    queryset = ApprovalEntry.objects.select_related("status", "requestor", "approver")
     serializer_class = ApproveApprovalRequestSerializer
     permission_classes = [IsAuthenticated]
 
@@ -80,7 +80,7 @@ class ApproveApprovalRequestViewSet(viewsets.ModelViewSet):
         return context
     
 class RejectApprovalRequestViewSet(viewsets.ModelViewSet):
-    queryset = ApprovalEntry.objects.all()
+    queryset = ApprovalEntry.objects.select_related("status", "requestor", "approver")
     serializer_class = RejectApprovalRequestSerializer
     permission_classes = [IsAuthenticated]
 
@@ -90,7 +90,7 @@ class RejectApprovalRequestViewSet(viewsets.ModelViewSet):
         return context
     
 class CancelApprovalRequestViewSet(viewsets.ModelViewSet):
-    queryset = ApprovalEntry.objects.all()
+    queryset = ApprovalEntry.objects.select_related("status", "requestor", "approver")
     serializer_class = CancelApprovalRequestSerializer
     permission_classes = [IsAuthenticated]
 
