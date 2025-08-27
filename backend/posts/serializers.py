@@ -67,7 +67,7 @@ class InitiativeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Initiative
         fields = [
-            'id', 'objective', 'description', 'unit_of_measure', 'weight', 'previous_target', 'current_target', 'cumulative_target',
+            'id', 'objective', 'dimension', 'description', 'unit_of_measure', 'weight', 'previous_target', 'current_target', 'cumulative_target',
             'status', 'created_by', 'created_at', 'modified_by', 'modified_at'
         ]
         read_only_fields = ['id','created_by', 'created_at', 'modified_by', 'modified_at', 'status']
