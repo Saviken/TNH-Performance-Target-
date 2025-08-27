@@ -37,7 +37,7 @@ class StrategicObjectiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = StrategicObjective
         fields = [
-            'id', 'name', 'dimension', 'created_by', 'created_at', 'modified_by', 'modified_at'
+            'id', 'name', 'created_by', 'created_at', 'modified_by', 'modified_at'
         ]
         read_only_fields = ['id','created_by', 'created_at', 'modified_by', 'modified_at']
 

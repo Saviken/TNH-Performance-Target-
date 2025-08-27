@@ -20,7 +20,7 @@ class DimensionViewSet(viewsets.ModelViewSet):
         return context 
     
 class StrategicObjectiveViewSet(viewsets.ModelViewSet):
-    queryset = StrategicObjective.objects.select_related("dimension", "created_by", "modified_by")
+    queryset = StrategicObjective.objects.select_related("created_by", "modified_by")
     serializer_class = StrategicObjectiveSerializer
 
     def get_serializer_context(self):

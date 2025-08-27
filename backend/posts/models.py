@@ -21,7 +21,6 @@ class Dimension(models.Model):
     
 class StrategicObjective(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    dimension = models.ForeignKey(Dimension, on_delete=models.PROTECT, null=False, blank=False, related_name='obj_dims', related_query_name="obj_dims")
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, null=False, blank=False, related_name="obj_creators", related_query_name="obj_creators")
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
