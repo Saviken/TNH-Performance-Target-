@@ -30,7 +30,7 @@ class StrategicObjectiveViewSet(viewsets.ModelViewSet):
         return context
     
 class InitiativeViewSet(viewsets.ModelViewSet):
-    queryset = Initiative.objects.select_related("status", "objective", "created_by", "modified_by")
+    queryset = Initiative.objects.select_related("status", "objective", "dimension", "created_by", "modified_by")
     serializer_class = InitiativeSerializer
 
     def get_serializer_context(self):
@@ -39,8 +39,19 @@ class InitiativeViewSet(viewsets.ModelViewSet):
         context["request"] = self.request
         return context
     
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     qs = Initiative.objects.select_related("department", "created_by", "modified_by")
+    #     if user.is_superuser or user.role == "USER":
+    #         return qs
+
+    #     if not user.dimension:
+    #         return Initiative.objects.none()
+
+    #     return qs.filter(dimension=user.dimension)
+    
 class InitiativeActionViewSet(viewsets.ModelViewSet):
-    queryset = InitiativeAction.objects.select_related("initiative")
+    queryset = InitiativeAction.objects.select_related("initiative", "created_by", "modified_by"))
     serializer_class = InitiativeActionSerializer
 
     def get_serializer_context(self):
