@@ -49,6 +49,7 @@ class ApprovalStatus(models.Model):
     
 class Initiative(models.Model):
     objective = models.ForeignKey(StrategicObjective, on_delete=models.PROTECT, null=False, blank=False)
+    dimension = models.ForeignKey(Dimension, on_delete=models.PROTECT, null=False, blank=False)
     description = models.TextField(null=False, blank=False)
     unit_of_measure = models.TextField(null=False, blank=False)
     weight = models.DecimalField(max_digits=4, decimal_places=3)
@@ -93,6 +94,9 @@ class InitiativeAction(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in_progress') # Create property
     created_at = models.DateTimeField(auto_now_add=True)
     deadline = models.CharField(max_length=100, help_text="Target deadline (e.g., Q4 2024)")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, null=False, blank=False, related_name="init_act_creators", related_query_name="init_act_creators")
+    modified_at = models.DateTimeField(auto_now=True)
+    modified_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="init_act_modifiers", related_query_name="init_act_modifiers")
     evidence = models.FileField(upload_to="attachments/", null=True, blank=True, validators=[validate_file_extension], help_text="Upload Word, PDF, JPEG, or PNG files.")
     # define property
     @property
