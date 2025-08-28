@@ -30,7 +30,6 @@ class StrategicObjectiveViewSet(viewsets.ModelViewSet):
         return context
     
 class InitiativeViewSet(viewsets.ModelViewSet):
-    queryset = Initiative.objects.select_related("status", "objective", "dimension", "created_by", "modified_by")
     serializer_class = InitiativeSerializer
 
     def get_serializer_context(self):
@@ -39,19 +38,18 @@ class InitiativeViewSet(viewsets.ModelViewSet):
         context["request"] = self.request
         return context
     
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     qs = Initiative.objects.select_related("department", "created_by", "modified_by")
-    #     if user.is_superuser or user.role == "USER":
-    #         return qs
+    def get_queryset(self):
+        user = self.request.user
+        qs = Initiative.objects.select_related("status", "objective", "dimension", "created_by", "modified_by")
+        if user.is_superuser or user.role == "SYSTEM_ADMIN":
+            return qs
 
-    #     if not user.dimension:
-    #         return Initiative.objects.none()
+        if not user.dimension:
+            return Initiative.objects.none()
 
-    #     return qs.filter(dimension=user.dimension)
+        return qs.filter(dimension=user.dimension)
     
 class InitiativeActionViewSet(viewsets.ModelViewSet):
-    queryset = InitiativeAction.objects.select_related("initiative", "created_by", "modified_by"))
     serializer_class = InitiativeActionSerializer
 
     def get_serializer_context(self):
@@ -59,6 +57,17 @@ class InitiativeActionViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context["request"] = self.request
         return context
+    
+    def get_queryset(self):
+        user = self.request.user
+        qs = InitiativeAction.objects.select_related("initiative", "created_by", "modified_by")
+        if user.is_superuser or user.role == "SYSTEM_ADMIN":
+            return qs
+
+        if not user.dimension:
+            return InitiativeAction.objects.none()
+
+        return qs.filter(initiative__dimension=user.dimension)
 
 class ApprovalStatusViewSet(viewsets.ModelViewSet):
     queryset = ApprovalStatus.objects.select_related("created_by", "modified_by")
