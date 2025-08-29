@@ -3,6 +3,7 @@ from pathlib import Path
 import environ
 import ldap
 from django_auth_ldap.config import LDAPSearch, GroupOfNamesType, LDAPSearchUnion
+import logging
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
@@ -135,3 +136,69 @@ REST_FRAMEWORK = {
 }
 
 AUTH_USER_MODEL="authentication.User"
+
+
+# Logging
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
+
+# Dynamically determine log level based on environment (use DEBUG for dev, ERROR for prod)
+LOG_LEVEL = 'DEBUG' if env('DEBUG', default='True') == 'True' else 'ERROR'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        # Console handler for development
+        'console': {
+            'level': 'WARNING', # Removed DEBUG level
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        # File handler for production logs
+        'file': {
+            'level': LOG_LEVEL,
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/ticket_backend.log'),
+            'formatter': 'verbose',
+        },
+        "ldap": {
+            "level": LOG_LEVEL,
+            "class": "logging.StreamHandler",
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': LOG_LEVEL,
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['file'],  # Errors for request-related issues are logged to the file
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['file'],  # Database queries can be logged to the file
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        "django_auth_ldap": {
+            "handlers": ["ldap", "file"],
+            "level": LOG_LEVEL,
+            "propagate": True,
+        },
+    },
+}
