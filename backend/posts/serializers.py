@@ -70,7 +70,7 @@ class InitiativeSerializer(serializers.ModelSerializer):
             'id', 'objective', 'dimension', 'description', 'unit_of_measure', 'weight', 'previous_target', 'current_target', 'cumulative_target',
             'status', 'created_by', 'created_at', 'modified_by', 'modified_at'
         ]
-        read_only_fields = ['id','created_by', 'created_at', 'modified_by', 'modified_at', 'status']
+        read_only_fields = ['id','created_by', 'created_at', 'modified_by', 'modified_at', 'status', 'dimension']
 
     def get_modified_by(self, obj):
         return obj.modified_by.get_full_name if obj.modified_by else None
@@ -78,7 +78,12 @@ class InitiativeSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            validated_data['created_by'] = request.user
+            user = request.user
+            validated_data['created_by'] = user
+            if user.dimension:
+                validated_data['dimension'] = user.dimension
+            else:
+                raise serializers.ValidationError({"dimension": "User is not mapped to a dimension(division or department)"})
         
         return super().create(validated_data)
     
